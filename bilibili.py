@@ -35,6 +35,8 @@ class BilibiliTask:
 
     
     def get_dynamic_videos(self):
+        # 注意：dynamic/region 接口已被 B站废弃（返回 code=-404 "啥都木有"），
+        # 仅作为回退来源保留，默认投币来源已改为 ranking。
         url = 'https://api.bilibili.com/x/web-interface/dynamic/region?ps=5&rid=1'
         try:
             res = requests.get(url, headers=self.headers)
@@ -42,6 +44,7 @@ class BilibiliTask:
             data = res.json()
             if data['code'] == 0:
                 return [video['bvid'] for video in data.get('data', {}).get('archives', [])]
+            logger.warning(f"动态视频接口返回非0: code={data.get('code')}, message={data.get('message')}（该接口疑似已废弃）")
             return []
         except Exception as e:
             logger.error(f"请求动态视频API异常: {e}")
@@ -55,6 +58,7 @@ class BilibiliTask:
             data = res.json()
             if data['code'] == 0:
                 return [video['bvid'] for video in data.get('data', {}).get('list', [])]
+            logger.warning(f"排行榜视频接口返回非0: code={data.get('code')}, message={data.get('message')}")
             return []
         except Exception as e:
             logger.error(f"请求排行榜视频API异常: {e}")
