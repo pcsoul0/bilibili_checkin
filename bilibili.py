@@ -146,9 +146,10 @@ class BilibiliTask:
         except Exception as e:
             return False, str(e)
 
-    def get_medal_list(self):
-        # 获取已佩戴的粉丝勋章列表（含每个勋章的 room_id）
-        url = 'https://api.live.bilibili.com/xlive/web-ucenter/v1/user/UserMedalList'
+    def get_link_groups(self):
+        # 获取已加入的应援团列表（含 group_id / owner_id）
+        # 注意：粉丝勋章本身无独立"签到"接口，可每日签到的是应援团（link_setting/sign_in）
+        url = 'https://api.vc.bilibili.com/link_group/v1/member/my_groups'
         headers = dict(self.headers)
         headers['Referer'] = 'https://live.bilibili.com/'
         try:
@@ -156,19 +157,22 @@ class BilibiliTask:
             res.raise_for_status()
             data = res.json()
             if data.get('code') == 0:
-                medallist = data.get('data', {}).get('list', [])
-                return [m.get('room_id') for m in medallist if m.get('room_id')]
-            logger.warning(f"粉丝勋章列表返回非0: code={data.get('code')}, message={data.get('message')}")
+                groups = data.get('data', {}).get('groups', [])
+                if isinstance(groups, dict):
+                    groups = groups.get('list', [])
+                return [(g.get('group_id'), g.get('owner_id')) for g in groups
+                        if g.get('group_id') and g.get('owner_id')]
+            logger.warning(f"应援团列表返回非0: code={data.get('code')}, message={data.get('message')}")
             return []
         except Exception as e:
-            logger.error(f"请求粉丝勋章列表异常: {e}")
+            logger.error(f"请求应援团列表异常: {e}")
             return []
 
-    def medal_sign(self, room_id):
+    def link_sign(self, group_id, owner_id):
         if not self.csrf:
             return False, "Bili_jct(csrf) 未找到"
         url = 'https://api.vc.bilibili.com/link_setting/v1/link_setting/sign_in'
-        data = {'room_id': room_id, 'csrf': self.csrf}
+        data = {'group_id': group_id, 'owner_id': owner_id, 'csrf': self.csrf}
         headers = dict(self.headers)
         headers['Referer'] = 'https://live.bilibili.com/'
         headers['Origin'] = 'https://live.bilibili.com'
@@ -178,11 +182,11 @@ class BilibiliTask:
             code = data.get('code')
             msg = data.get('message') or ''
             if code == 0:
-                return True, "粉丝勋章签到成功"
+                return True, "应援团签到成功"
             if '重复' in msg or '已' in msg or '已经' in msg:
-                return True, "粉丝勋章今日已签"
-            logger.warning(f"粉丝勋章签到返回: code={code}, msg={msg}")
-            return False, msg or "粉丝勋章签到失败"
+                return True, "应援团今日已签"
+            logger.warning(f"应援团签到返回: code={code}, msg={msg}")
+            return False, msg or "应援团签到失败"
         except Exception as e:
             return False, str(e)
 
