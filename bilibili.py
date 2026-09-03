@@ -125,6 +125,27 @@ class BilibiliTask:
         except Exception as e:
             return False, str(e)
 
+    def silver2coin(self):
+        # 银瓜子兑换硬币：每日最多换 1 枚硬币（需账号有银瓜子）
+        if not self.csrf:
+            return False, "Bili_jct(csrf) 未找到"
+        url = 'https://api.live.bilibili.com/pay/v1/Exchange/silver2coin'
+        data = {'csrf': self.csrf, 'csrf_token': self.csrf}
+        try:
+            res = requests.post(url, headers=self.headers, data=data)
+            data = res.json()
+            code = data.get('code')
+            msg = data.get('message') or ''
+            if code == 0:
+                return True, "银瓜子兑换硬币成功"
+            # 无银瓜子 / 今日已兑换：非失败，视为跳过
+            if '不足' in msg or '已经兑换' in msg or '已兑换' in msg or '今天' in msg:
+                return False, f"银瓜子不足或今日已兑换，跳过"
+            logger.warning(f"银瓜子兑换返回: code={code}, msg={msg}")
+            return False, msg or "银瓜子兑换失败"
+        except Exception as e:
+            return False, str(e)
+
     def manga_sign(self):
         url = 'https://manga.bilibili.com/twirp/activity.v1.Activity/ClockIn'
         try:
