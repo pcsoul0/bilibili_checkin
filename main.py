@@ -111,19 +111,19 @@ def run_all_tasks_for_account(bili, config):
         tasks_result['投币任务'] = execute_coin_task(bili, user_info, config)
     if 'silver2coin' in tasks_to_run:
         tasks_result['银瓜子兑换'] = bili.silver2coin()
-    if 'medal_sign' in tasks_to_run:
-        medal_rooms = bili.get_medal_list()
-        if not medal_rooms:
-            tasks_result['粉丝勋章签到'] = (False, "无粉丝勋章，跳过")
+    if 'link_sign' in tasks_to_run:
+        link_groups = bili.get_link_groups()
+        if not link_groups:
+            tasks_result['应援团签到'] = (False, "无应援团，跳过")
         else:
             ok = 0
-            for rid in medal_rooms:
-                success, msg = bili.medal_sign(rid)
+            for gid, oid in link_groups:
+                success, msg = bili.link_sign(gid, oid)
                 if success:
                     ok += 1
                 else:
-                    logger.warning(f"粉丝勋章(room={rid})签到: {msg}")
-            tasks_result['粉丝勋章签到'] = (ok > 0, f"已签 {ok}/{len(medal_rooms)} 个")
+                    logger.warning(f"应援团(group={gid})签到: {msg}")
+            tasks_result['应援团签到'] = (ok > 0, f"已签 {ok}/{len(link_groups)} 个")
 
     tasks_result['观看视频'] = bili.watch_video(bvid_for_task)
 
@@ -136,7 +136,7 @@ def main():
     config = {
         "BILIBILI_COOKIE": os.environ.get('BILIBILI_COOKIE'),
         "PUSH_PLUS_TOKEN": os.environ.get('PUSH_PLUS_TOKEN'),
-        "TASK_CONFIG": os.environ.get('TASK_CONFIG') or 'manga_sign,share_video,add_coin,silver2coin,medal_sign',
+        "TASK_CONFIG": os.environ.get('TASK_CONFIG') or 'manga_sign,share_video,add_coin,silver2coin,link_sign',
         "COIN_ADD_NUM": os.environ.get('COIN_ADD_NUM') or '1',
         "COIN_SELECT_LIKE": os.environ.get('COIN_SELECT_LIKE') or '1',
         "COIN_VIDEO_SOURCE": os.environ.get('COIN_VIDEO_SOURCE') or 'ranking'
