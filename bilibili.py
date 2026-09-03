@@ -132,12 +132,12 @@ class BilibiliTask:
             res = requests.post(url, headers=self.headers, data={'platform': 'android'})
             data = res.json()
             code = data.get('code')
-            # 成功：code=0；今日已签：code="invalid_argument"（应视为成功，非失败）
-            if code == 0 or code == 'invalid_argument':
+            msg = data.get('msg') or data.get('message') or ''
+            # 成功：code=0；今日已签（code=1 / invalid_argument 且提示重复签到）→ 视为成功
+            if code == 0 or '重复签到' in msg or code == 'invalid_argument':
                 return True, "漫画签到成功"
-            # 真实错误在 msg 字段（非 message）；打印以便排查
-            msg = data.get('msg') or data.get('message') or '漫画签到失败'
+            # 真实错误：打印以便排查
             logger.warning(f"漫画签到接口返回: code={code}, msg={msg}")
-            return False, msg
+            return False, msg or '漫画签到失败'
         except Exception as e:
             return False, str(e)
