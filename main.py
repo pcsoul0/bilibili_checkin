@@ -38,15 +38,25 @@ def execute_coin_task(bili, user_info, config):
     
     coins_to_add = min(coins_to_add, int(coin_balance), 5)
 
-    if config.get('COIN_VIDEO_SOURCE') == 'ranking':
+    source = config.get('COIN_VIDEO_SOURCE')
+    if source == 'ranking':
         video_list = bili.get_ranking_videos()
         logger.info("获取排行榜视频作为投币目标。")
     else:
         video_list = bili.get_dynamic_videos()
         logger.info("获取动态视频作为投币目标。")
 
+    # 回退逻辑：主来源取不到，换另一来源；再取不到，用硬编码兜底视频
     if not video_list:
-        return False, "无法获取视频列表"
+        if source == 'ranking':
+            logger.warning("排行榜来源未取到视频，回退到动态来源。")
+            video_list = bili.get_dynamic_videos()
+        else:
+            logger.warning("动态来源未取到视频（接口疑似已废弃），回退到排行榜来源。")
+            video_list = bili.get_ranking_videos()
+    if not video_list:
+        logger.warning("所有来源均未取得视频列表，使用硬编码兜底视频投币。")
+        video_list = ['BV1GJ411x7h7']
 
     added_coins = 0
     for bvid in video_list:
@@ -81,7 +91,10 @@ def run_all_tasks_for_account(bili, config):
     logger.info(f"账号名称: {masked_uname}")
     tasks_result = {}
     
-    video_list = bili.get_dynamic_videos()
+    # 分享/观看任务取视频：优先排行榜（已验证可用），回退动态，再回退硬编码
+    video_list = bili.get_ranking_videos()
+    if not video_list:
+        video_list = bili.get_dynamic_videos()
     bvid_for_task = video_list[0] if video_list else 'BV1GJ411x7h7'
 
     if 'share_video' in tasks_to_run:
@@ -107,7 +120,7 @@ def main():
         "TASK_CONFIG": os.environ.get('TASK_CONFIG') or 'live_sign,manga_sign,share_video,add_coin',
         "COIN_ADD_NUM": os.environ.get('COIN_ADD_NUM') or '1',
         "COIN_SELECT_LIKE": os.environ.get('COIN_SELECT_LIKE') or '1',
-        "COIN_VIDEO_SOURCE": os.environ.get('COIN_VIDEO_SOURCE') or 'dynamic'
+        "COIN_VIDEO_SOURCE": os.environ.get('COIN_VIDEO_SOURCE') or 'ranking'
     }
     # ============================================================
     
