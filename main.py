@@ -105,6 +105,8 @@ def run_all_tasks_for_account(bili, config):
         tasks_result['漫画签到'] = bili.manga_sign()
     if 'add_coin' in tasks_to_run:
         tasks_result['投币任务'] = execute_coin_task(bili, user_info, config)
+    if 'silver2coin' in tasks_to_run:
+        tasks_result['银瓜子兑换'] = bili.silver2coin()
 
     tasks_result['观看视频'] = bili.watch_video(bvid_for_task)
 
@@ -117,7 +119,7 @@ def main():
     config = {
         "BILIBILI_COOKIE": os.environ.get('BILIBILI_COOKIE'),
         "PUSH_PLUS_TOKEN": os.environ.get('PUSH_PLUS_TOKEN'),
-        "TASK_CONFIG": os.environ.get('TASK_CONFIG') or 'manga_sign,share_video,add_coin',
+        "TASK_CONFIG": os.environ.get('TASK_CONFIG') or 'manga_sign,share_video,add_coin,silver2coin',
         "COIN_ADD_NUM": os.environ.get('COIN_ADD_NUM') or '1',
         "COIN_SELECT_LIKE": os.environ.get('COIN_SELECT_LIKE') or '1',
         "COIN_VIDEO_SOURCE": os.environ.get('COIN_VIDEO_SOURCE') or 'ranking'
