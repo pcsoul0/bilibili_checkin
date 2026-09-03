@@ -146,6 +146,46 @@ class BilibiliTask:
         except Exception as e:
             return False, str(e)
 
+    def get_medal_list(self):
+        # 获取已佩戴的粉丝勋章列表（含每个勋章的 room_id）
+        url = 'https://api.live.bilibili.com/xlive/web-ucenter/v1/user/UserMedalList'
+        headers = dict(self.headers)
+        headers['Referer'] = 'https://live.bilibili.com/'
+        try:
+            res = requests.get(url, headers=headers)
+            res.raise_for_status()
+            data = res.json()
+            if data.get('code') == 0:
+                medallist = data.get('data', {}).get('list', [])
+                return [m.get('room_id') for m in medallist if m.get('room_id')]
+            logger.warning(f"粉丝勋章列表返回非0: code={data.get('code')}, message={data.get('message')}")
+            return []
+        except Exception as e:
+            logger.error(f"请求粉丝勋章列表异常: {e}")
+            return []
+
+    def medal_sign(self, room_id):
+        if not self.csrf:
+            return False, "Bili_jct(csrf) 未找到"
+        url = 'https://api.vc.bilibili.com/link_setting/v1/link_setting/sign_in'
+        data = {'room_id': room_id, 'csrf': self.csrf}
+        headers = dict(self.headers)
+        headers['Referer'] = 'https://live.bilibili.com/'
+        headers['Origin'] = 'https://live.bilibili.com'
+        try:
+            res = requests.post(url, headers=headers, data=data)
+            data = res.json()
+            code = data.get('code')
+            msg = data.get('message') or ''
+            if code == 0:
+                return True, "粉丝勋章签到成功"
+            if '重复' in msg or '已' in msg or '已经' in msg:
+                return True, "粉丝勋章今日已签"
+            logger.warning(f"粉丝勋章签到返回: code={code}, msg={msg}")
+            return False, msg or "粉丝勋章签到失败"
+        except Exception as e:
+            return False, str(e)
+
     def manga_sign(self):
         url = 'https://manga.bilibili.com/twirp/activity.v1.Activity/ClockIn'
         try:
