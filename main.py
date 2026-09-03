@@ -81,7 +81,7 @@ def execute_coin_task(bili, user_info, config):
 def run_all_tasks_for_account(bili, config):
     tasks_to_run = [task.strip() for task in config.get('TASK_CONFIG', '').split(',') if task.strip()]
     if not tasks_to_run:
-        tasks_to_run = ['live_sign', 'manga_sign', 'share_video', 'add_coin']
+        tasks_to_run = ['manga_sign', 'share_video', 'add_coin']
 
     user_info = bili.get_user_info()
     if not user_info:
@@ -117,7 +117,7 @@ def main():
     config = {
         "BILIBILI_COOKIE": os.environ.get('BILIBILI_COOKIE'),
         "PUSH_PLUS_TOKEN": os.environ.get('PUSH_PLUS_TOKEN'),
-        "TASK_CONFIG": os.environ.get('TASK_CONFIG') or 'live_sign,manga_sign,share_video,add_coin',
+        "TASK_CONFIG": os.environ.get('TASK_CONFIG') or 'manga_sign,share_video,add_coin',
         "COIN_ADD_NUM": os.environ.get('COIN_ADD_NUM') or '1',
         "COIN_SELECT_LIKE": os.environ.get('COIN_SELECT_LIKE') or '1',
         "COIN_VIDEO_SOURCE": os.environ.get('COIN_VIDEO_SOURCE') or 'ranking'
